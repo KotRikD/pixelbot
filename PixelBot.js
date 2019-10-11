@@ -6,7 +6,7 @@ const { createCanvas, Image } = require('canvas');
 const axios = require("axios");
 
 module.exports = class PixelBot {
-    constructor(wsslink, store) {
+    constructor (wsslink, store) {
         this.wsslink = wsslink;
         this.MAX_WIDTH = 1590
         this.MAX_HEIGHT = 400
@@ -64,12 +64,12 @@ module.exports = class PixelBot {
         this.isStartedWork = false;
         this.thatsMy = false;
 
-        this.load(store).catch((e)=>{
+        this.load(store).catch((e) => {
             console.log(e)
         })
     }
 
-    async load(store) {
+    async load (store) {
         await this.loadFirstTemplate(store)
 
         this.canvas = createCanvas();
@@ -86,14 +86,14 @@ module.exports = class PixelBot {
             for (var i = 0; i < imd.length; i += 4) {
                 var x = (i / 4) % this.img.width + 1,
                     y = ~~((i / 4) / this.img.width) + 1;
-                
-                let color = [imd[i], imd[i+1], imd[i+2]]
-                if (imd[i+3] < 1) {
+
+                let color = [imd[i], imd[i + 1], imd[i + 2]]
+                if (imd[i + 3] < 1) {
                     continue
                 } else {
                     for (let colord of this.colors) {
                         if (color[0] == colord[0] && color[1] == colord[1] && color[2] == colord[2]) {
-                            this.pixelDataToDraw[[x,y]] = colord[3]
+                            this.pixelDataToDraw[[x, y]] = colord[3]
                             break
                         }
                     }
@@ -104,19 +104,19 @@ module.exports = class PixelBot {
         }
 
 
-        this.img.src = "https://pixelbattle.id0.pw/pixel-logo.png?" + parseInt(new Date().getTime()/1000);
+        this.img.src = "https://pixelbattle.id0.pw/pixel-logo.png?" + parseInt(new Date().getTime() / 1000);
     }
 
 
-    async loadFirstTemplate(store) {
+    async loadFirstTemplate (store) {
         if (!store.initPixelCanvas) {
             store.initPixelCanvas = {}
-            this.thatsMy = true;   
+            this.thatsMy = true;
         }
         //try {}
-        let startPixels = await axios.get("https://pixel2019.vkforms.ru/api/data/"+this.randomInteger(1, 19))
+        let startPixels = await axios.get("https://pixel2019.vkforms.ru/api/data/" + this.randomInteger(1, 19))
         let chunkedString = this.chunkString(startPixels.data, 1590)
-        chunkedString = chunkedString.slice(0, chunkedString.length-1)
+        chunkedString = chunkedString.slice(0, chunkedString.length - 1)
         let y = 1;
         for (let line of chunkedString) {
             let x = 1;
@@ -124,12 +124,12 @@ module.exports = class PixelBot {
             for (let pixel of lined) {
                 let color = this.decode_colors[pixel];
                 store.initPixelCanvas[[x, y]] = color
-                x+=1
+                x += 1
             }
         }
     }
 
-    initWs(store) {
+    initWs (store) {
         this.ws = new WebSocket(this.wsslink);
 
         this.ws.on('open', async () => {
@@ -138,12 +138,12 @@ module.exports = class PixelBot {
         })
 
         this.ws.on('message', async (event) => {
-            while(this.busy) {
+            while (this.busy) {
                 await this.sleep(500)
             }
             try {
                 this.busy = true;
-                
+
                 if (this.thatsMy) {
                     let c = this.toArrayBuffer(event)
                     for (var d = c.byteLength / 4, e = new Int32Array(c, 0, d), f = Math.floor(d / 3), g = 0; g < f; g++) {
@@ -158,11 +158,11 @@ module.exports = class PixelBot {
                     }
                 }
 
-                if(!this.isStartedWork) {
+                if (!this.isStartedWork) {
                     this.startWork()
                 }
                 this.busy = false;
-            } catch(e) {
+            } catch (e) {
                 this.busy = false;
                 console.log("idk of this type (ignore this)")
                 console.log(e)
@@ -175,10 +175,10 @@ module.exports = class PixelBot {
         })
     }
 
-    async startWork(store) {
+    async startWork (store) {
         console.log("start work")
         this.isStartedWork = true;
-        for (let ind of Object.keys(this.pixelDataToDraw)) {
+        for (let ind of this.shuffle(Object.keys(this.pixelDataToDraw))) {
             let color = this.pixelDataToDraw[ind]
             let coords = ind.split(",")
             if (store.initPixelCanvas && store.initPixelCanvas[ind] && store.initPixelCanvas[ind] == color) {
@@ -189,31 +189,31 @@ module.exports = class PixelBot {
             if (store.initPixelCanvas) {
                 store.initPixelCanvas[ind] = color
             }
-            
+
             await this.sleep(60000) // 60 sec
         }
         this.isStartedWork = false;
     }
 
-    async send(colorId, flag, x, y, store) {
+    async send (colorId, flag, x, y, store) {
         let c = new ArrayBuffer(4);
         new Int32Array(c, 0, 1)[0] = this.pack(colorId, flag, x, y)
-        if(!this.ws) {
+        if (!this.ws) {
             this.initWs(store);
         }
-        while(!this.wsloaded) {
+        while (!this.wsloaded) {
             await this.sleep(500)
         }
         this.ws.send(c)
         console.log(`Поставил пиксель: x${x} y${y} cid${colorId}`)
     }
-    
-    pack(colorId, flag, x, y) {
+
+    pack (colorId, flag, x, y) {
         let b = parseInt(colorId, 10) + parseInt(flag, 10) * this.MAX_COLOR_ID;
         return parseInt(x, 10) + parseInt(y, 10) * this.MAX_WIDTH + this.SIZE * b;
     }
 
-    unpack(b) {
+    unpack (b) {
         let c = Math.floor(b / this.SIZE)
         let d = (b -= c * this.SIZE) % this.MAX_WIDTH;
         return {
@@ -228,22 +228,41 @@ module.exports = class PixelBot {
         return new Promise((resolve) => setTimeout(resolve, time));
     }
 
-    toArrayBuffer(buf) {
+    toArrayBuffer (buf) {
         var ab = new ArrayBuffer(buf.length);
         var view = new Uint8Array(ab);
         for (var i = 0; i < buf.length; ++i) {
             view[i] = buf[i];
         }
         return ab;
-    } 
+    }
 
-    chunkString(str, length) {
+    chunkString (str, length) {
         return str.match(new RegExp('.{1,' + length + '}', 'g'));
     }
 
-    randomInteger(min, max) {
+    randomInteger (min, max) {
         let rand = min - 0.5 + Math.random() * (max - min + 1);
         return Math.round(rand);
+    }
+
+    shuffle (array) {
+        var currentIndex = array.length, temporaryValue, randomIndex;
+
+        // While there remain elements to shuffle...
+        while (0 !== currentIndex) {
+
+            // Pick a remaining element...
+            randomIndex = Math.floor(Math.random() * currentIndex);
+            currentIndex -= 1;
+
+            // And swap it with the current element.
+            temporaryValue = array[currentIndex];
+            array[currentIndex] = array[randomIndex];
+            array[randomIndex] = temporaryValue;
+        }
+
+        return array;
     }
 
 }
