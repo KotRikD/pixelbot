@@ -3,6 +3,7 @@
 */
 const WebSocket = require('ws');
 const axios = require("axios");
+const urlapi = require('url');
 
 module.exports = class PixelBot {
     constructor (wsslink, store) {
@@ -30,7 +31,26 @@ module.exports = class PixelBot {
         this.startWork(store)
     }
 
-    initWs (store) {
+    async resolveCode(store) {
+        try {
+            let url = urlapi.parse(this.wsslink);
+            let result = await axios.get("https://pixel2019.vkforms.ru/api/start", {
+                'headers': {
+                    'X-vk-sign': url.search
+                }
+            })
+
+            let code = result.data.response.code;
+            code = eval(store.replaceAll(code, "window.", ""))
+            this.wsslink = this.wsslink.replace(/&c=.*/g, `&c=${code}`)
+            console.log(`Код решён: ${code}`)
+        } catch (e) {
+            console.log("Произошла ошибка при решении кода")
+        }
+    }
+
+    async initWs (store) {
+        await this.resolveCode(store);
         this.ws = new WebSocket(this.wsslink);
 
         this.ws.on('open', async () => {
@@ -107,7 +127,7 @@ module.exports = class PixelBot {
         let c = new ArrayBuffer(4);
         new Int32Array(c, 0, 1)[0] = this.pack(colorId, flag, x, y)
         if (!this.ws) {
-            this.initWs(store);
+            await this.initWs(store);
         }
         while (!this.wsloaded) {
             await this.sleep(500)

@@ -54,11 +54,17 @@ let loadImage = function (src) {
     })
 }
 
+let replaceAll = function (string, search, replacement) {
+    var target = string;
+    return target.split(search).join(replacement);
+};
+
 module.exports = {
     data: null,
     canvas: null,
     pixelDataToDraw: {},
     lastUpdate: 0,
+    replaceAll: replaceAll,
 
     async load () {
         const nowTime = parseInt(+new Date() / 1000)
