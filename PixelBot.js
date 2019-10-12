@@ -4,6 +4,9 @@
 const WebSocket = require('ws');
 const axios = require("axios");
 const urlapi = require('url');
+const jsdom = require("jsdom");
+const { JSDOM } = jsdom;
+const { document } = (new JSDOM(`<html></html>`)).window;
 
 module.exports = class PixelBot {
     constructor (wsslink, store) {
@@ -21,6 +24,7 @@ module.exports = class PixelBot {
         this.busy = false;
 
         this.isStartedWork = false;
+        this.rCode = null;
 
         this.load(store).catch((e) => {
             console.log(e)
@@ -41,10 +45,12 @@ module.exports = class PixelBot {
             })
 
             let code = result.data.response.code;
+            console.log(code)
             code = eval(store.replaceAll(code, "window.", ""))
             this.wsslink = this.wsslink.replace(/&c=.*/g, `&c=${code}`)
             console.log(`Код решён: ${code}`)
         } catch (e) {
+            console.log(e)
             console.log("Произошла ошибка при решении кода")
         }
     }
@@ -55,26 +61,59 @@ module.exports = class PixelBot {
 
         this.ws.on('open', async () => {
             console.log("connected to websocket")
-            this.wsloaded = true;
         })
 
         this.ws.on('message', async (event) => {
             while (this.busy) {
                 await this.sleep(500)
             }
+            
             try {
                 this.busy = true;
 
-                let c = this.toArrayBuffer(event)
-                for (var d = c.byteLength / 4, e = new Int32Array(c, 0, d), f = Math.floor(d / 3), g = 0; g < f; g++) {
-                    var h = e[3 * g], i = e[1 + 3 * g], j = e[2 + 3 * g], k = this.unpack(h), l = k.x, m = k.y, n = k.color, o = k.flag;
-                    // 1 - x
-                    // 2 - y
-                    // 3 - color
-                    // 4 - uid
-                    // 5 - gid
-                    // 6 - flag
-                    store.data[[l, m]] = n
+                if ("string" === typeof event) {
+                    //Json
+                    try {
+                    let a = JSON.parse(event)
+                        if (a['v']) {
+                            // ТО что нужно!
+                            // Так и предупреждение для копирастов, если вы копируйте мой скрипт на гитхаб
+                            // Ну уважьте разраба поставьте копирайт @KotRikD
+                            // Человеку тоже важен респект(
+                            let codeRaw = a['v']['code']
+                            
+                            let code = codeRaw
+                            let funnyReplacesHs = {
+                                'window.': '',
+                                'global': 'undefined',
+                            }
+                            for (let replace of Object.keys(funnyReplacesHs)) {
+                                // HS знаю что вы это видите, харе нам жизнь усложнять
+                                // @in <3 @girl <3 @hs <3 from coin games
+                                // разбаньте Вову(vk.com/m_vts)(
+                                code = store.replaceAll(code, replace, funnyReplacesHs[replace])
+                            }
+
+                            this.rCode = eval(code);
+                            this.ws.send("R"+this.rCode)
+                            this.wsloaded = true;
+                        }
+                    } catch (e) {
+                        
+                    }
+                } else {
+                    let c = this.toArrayBuffer(event)
+
+                    for (var d = c.byteLength / 4, e = new Int32Array(c, 0, d), f = Math.floor(d / 3), g = 0; g < f; g++) {
+                        var h = e[3 * g], i = e[1 + 3 * g], j = e[2 + 3 * g], k = this.unpack(h), l = k.x, m = k.y, n = k.color, o = k.flag;
+                        // 1 - x
+                        // 2 - y
+                        // 3 - color
+                        // 4 - uid
+                        // 5 - gid
+                        // 6 - flag
+                        store.data[[l, m]] = n
+                    }
                 }
 
                 if (!this.isStartedWork) {
