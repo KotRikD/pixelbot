@@ -5,16 +5,18 @@ const Store = require("./Store")
 
 console.logCopy = console.log.bind(console);
 
-console.log = function(data)
-{
-    const d = new Date()
-    const currentDate = `[${d.getHours()}:${d.getMinutes()}:${d.getSeconds()}]`
-    this.logCopy(currentDate, data)
+console.log = function (data) {
+    const d = new Date();
+    const currentDate = "[" + ("0" + d.getHours()).slice(-2) + ":" +
+        ("0" + d.getMinutes()).slice(-2) + ":" +
+        ("0" + d.getSeconds()).slice(-2) + "]";
+
+    this.logCopy(currentDate, data);
 };
 
-async function init() {
+async function init () {
     for (let link of config.wssLinks) {
-        await new Promise((resolve) => setTimeout(resolve, 3000)).then((r)=> {
+        await new Promise((resolve) => setTimeout(resolve, 3000)).then((r) => {
             new PixelBot(link, Store)
         });
     }
