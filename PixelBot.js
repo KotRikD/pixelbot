@@ -45,7 +45,6 @@ module.exports = class PixelBot {
             })
 
             let code = result.data.response.code;
-            console.log(code)
             code = eval(store.replaceAll(code, "window.", ""))
             this.wsslink = this.wsslink.replace(/&c=.*/g, `&c=${code}`)
             console.log(`Код решён: ${code}`)
@@ -97,6 +96,7 @@ module.exports = class PixelBot {
                             this.rCode = eval(code);
                             this.ws.send("R"+this.rCode)
                             this.wsloaded = true;
+                            console.log(`Код-R решён: R${this.rCode}`)
                         }
                     } catch (e) {
                         
@@ -136,12 +136,11 @@ module.exports = class PixelBot {
     async startWork (store) {
         console.log("Запуск")
         this.isStartedWork = true;
+        await store.load();
         while (true) {
-            await store.load();
-
             const keys = Object.keys(store.pixelDataToDraw);
             const ind = keys[Math.floor(Math.random() * keys.length)] // Рандомный элемент
-
+            
             let color = store.pixelDataToDraw[ind]
             let coords = ind.split(",")
             if (store.data && store.data[ind] && store.data[ind] == color) {

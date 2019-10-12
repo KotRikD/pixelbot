@@ -81,15 +81,16 @@ module.exports = {
         let startPixels = await axios.get("https://pixel2019.vkforms.ru/api/data/" + randomInteger(1, 19))
         let chunkedString = chunkString(startPixels.data, 1590)
         chunkedString = chunkedString.slice(0, chunkedString.length - 1)
-        let y = 1;
+        let y = 0;
         for (let line of chunkedString) {
-            let x = 1;
+            let x = 0;
             let lined = line.split("")
             for (let pixel of lined) {
                 let color = decode_colors[pixel];
                 this.data[[x, y]] = color
                 x += 1
             }
+            y+=1
         }
         console.log("Текущее состояние полотна обновлено")
     },
