@@ -155,7 +155,7 @@ module.exports = class PixelBot {
 
             if (keys.length < 1) {
                 break
-            } 
+            }
 
             await this.sleep(60000) // 60 sec
         }

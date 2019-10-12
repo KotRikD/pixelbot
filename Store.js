@@ -66,6 +66,9 @@ module.exports = {
     lastUpdate: 0,
     replaceAll: replaceAll,
 
+    timerId: null,
+    lastCounter: 0,
+
     async load () {
         const nowTime = parseInt(+new Date() / 1000)
         if (nowTime - this.lastUpdate > 60) {
@@ -73,6 +76,27 @@ module.exports = {
             await this.loadData();
             await this.loadImg();
         }
+
+        if (!this.timerId){
+            this.timerId = setInterval(() => {
+                let good = 0;
+                
+                const keys = Object.keys(this.pixelDataToDraw);
+                let max = keys.length;
+                for (let ind of keys) {
+                    let color = this.pixelDataToDraw[ind]
+                    let coords = ind.split(",")
+                    if (this.data && this.data[ind] && this.data[ind] == color) {
+                        good += 1;
+                    }
+                }
+                if (this.lastCounter !== 0) {
+                    console.log(good + " из " + max + "(за минуту " + (good - this.lastCounter) + ")");
+                }
+                this.lastCounter = good;
+            }, 60000);
+        }
+        
     },
 
     async loadData () {
