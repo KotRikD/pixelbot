@@ -85,6 +85,7 @@ module.exports = class PixelBot {
                             let funnyReplacesHs = {
                                 'window.': '',
                                 'global': 'undefined',
+                                "=== 'object'": "!== 'object'"
                             }
                             for (let replace of Object.keys(funnyReplacesHs)) {
                                 // HS знаю что вы это видите, харе нам жизнь усложнять
