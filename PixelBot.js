@@ -144,7 +144,7 @@ module.exports = class PixelBot {
             
             let color = store.pixelDataToDraw[ind]
             let coords = ind.split(",")
-            if (store.data && store.data[ind] && store.data[ind] == color) {
+            if (store.data !== null && color === store.data[ind]) {
                 continue
             }
 
