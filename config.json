@@ -1,9 +1,9 @@
 {
     "wssLinks": [
-        "wss://pixel2019.vkforms.ru/...",
-        "wss://pixel2019.vkforms.ru/...",
-        "wss://pixel2019.vkforms.ru/...",
-        "wss://pixel2019.vkforms.ru/..."
-        
+        "wss://pixel-dev.w84.vkforms.ru/ws?...",
+        "wss://pixel-dev.w84.vkforms.ru/ws?...",
+        "wss://pixel-dev.w84.vkforms.ru/ws?...",
+        "wss://pixel-dev.w84.vkforms.ru/ws?...",
+        "wss://pixel-dev.w84.vkforms.ru/ws?..."
     ]
 }

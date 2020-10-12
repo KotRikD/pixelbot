@@ -1,2 +1,3 @@
-npm i
-node index.js
+@echo off
+npm run start
+pause

@@ -11,6 +11,7 @@ const { document } = (new JSDOM(`<html></html>`)).window;
 module.exports = class PixelBot {
     constructor (wsslink, store) {
         this.wsslink = wsslink;
+        this.urldata = new URL(this.wsslink);
         this.MAX_WIDTH = 1590
         this.MAX_HEIGHT = 400
         this.MAX_COLOR_ID = 25
@@ -35,73 +36,85 @@ module.exports = class PixelBot {
         this.startWork(store)
     }
 
-    async resolveCode(store) {
-        try {
-            let url = urlapi.parse(this.wsslink);
-            let result = await axios.get("https://pixel2019.vkforms.ru/api/start", {
-                'headers': {
-                    'X-vk-sign': url.search
-                }
-            })
+    // async resolveCode(store) {
+    //     try {
+    //         let url = urlapi.parse(this.wsslink);
+    //         let result = await axios.get("https://pixel2019.vkforms.ru/api/start", {
+    //             'headers': {
+    //                 'X-vk-sign': url.search
+    //             }
+    //         })
 
-            let code = result.data.response.code;
-            code = eval(store.replaceAll(code, "window.", ""))
-            this.wsslink = this.wsslink.replace(/&c=.*/g, `&c=${code}`)
-            console.log(`Код решён: ${code}`)
-        } catch (e) {
-            console.log(e)
-            console.log("Произошла ошибка при решении кода")
-        }
-    }
+    //         let code = result.data.response.code;
+    //         code = eval(store.replaceAll(code, "window.", ""))
+    //         this.wsslink = this.wsslink.replace(/&c=.*/g, `&c=${code}`)
+    //         console.log(`Код решён: ${code}`)
+    //     } catch (e) {
+    //         console.log(e)
+    //         console.log("Произошла ошибка при решении кода")
+    //     }
+    // }
 
     async initWs (store) {
-        await this.resolveCode(store);
-        this.ws = new WebSocket(this.wsslink);
+        //await this.resolveCode(store);       
+        this.ws = new WebSocket(this.wsslink, null, { headers: { 
+            'Host': 'pixel-dev.w84.vkforms.ru',
+            'Pragma': 'no-cache',
+            'Cache-Control': 'no-cache',
+            'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/85.0.4183.121 Safari/537.36 OPR/71.0.3770.228',
+            'Origin': 'https://prod-app7148888-4344348240cf.pages-ac.vk-apps.com',
+            'Accept-Encoding': 'gzip, deflate, br',
+            'Accept-Language': 'ru-RU,ru;q=0.9,en-US;q=0.8,en;q=0.7'
+        }});
 
         this.ws.on('open', async () => {
-            console.log("connected to websocket")
+            console.log(`[${this.urldata.searchParams.get('vk_user_id')}] connected to websocket`)
         })
 
         this.ws.on('message', async (event) => {
             while (this.busy) {
                 await this.sleep(500)
             }
-            
+
             try {
                 this.busy = true;
 
                 if ("string" === typeof event) {
                     //Json
-                    try {
-                    let a = JSON.parse(event)
-                        if (a['v']) {
-                            // ТО что нужно!
-                            // Так и предупреждение для копирастов, если вы копируйте мой скрипт на гитхаб
-                            // Ну уважьте разраба поставьте копирайт @KotRikD
-                            // Человеку тоже важен респект(
-                            let codeRaw = a['v']['code']
-                            
-                            let code = codeRaw
-                            let funnyReplacesHs = {
-                                'window.': '',
-                                'global': 'undefined',
-                                "=== 'object'": "!== 'object'"
-                            }
-                            for (let replace of Object.keys(funnyReplacesHs)) {
-                                // HS знаю что вы это видите, харе нам жизнь усложнять
-                                // @in <3 @girl <3 @hs <3 from coin games
-                                // разбаньте Вову(vk.com/m_vts)(
-                                code = store.replaceAll(code, replace, funnyReplacesHs[replace])
-                            }
-
-                            this.rCode = eval(code);
-                            this.ws.send("R"+this.rCode)
-                            this.wsloaded = true;
-                            console.log(`Код-R решён: R${this.rCode}`)
-                        }
-                    } catch (e) {
-                        
+                    if (event === "ping") {
+                        this.ws.send("pong");
                     }
+                    // try {
+                    //     let a = JSON.parse(event)
+                    //     // if (a['v']) {
+                    //     //     // ТО что нужно!
+                    //     //     // Так и предупреждение для копирастов, если вы копируйте мой скрипт на гитхаб
+                    //     //     // Ну уважьте разраба поставьте копирайт @KotRikD
+                    //     //     // Человеку тоже важен респект(
+                    //     //     let codeRaw = a['v']['code']
+                            
+                    //     //     let code = codeRaw
+                    //     //     let funnyReplacesHs = {
+                    //     //         'window.': '',
+                    //     //         'global': 'undefined',
+                    //     //         "=== 'object'": "!== 'object'"
+                    //     //     }
+                    //     //     for (let replace of Object.keys(funnyReplacesHs)) {
+                    //     //         // HS знаю что вы это видите, харе нам жизнь усложнять
+                    //     //         // @in <3 @girl <3 @hs <3 from coin games
+                    //     //         // разбаньте Вову(vk.com/m_vts)(
+                    //     //         code = store.replaceAll(code, replace, funnyReplacesHs[replace])
+                    //     //     }
+
+                    //     //     this.rCode = eval(code);
+                    //     //     this.ws.send("R"+this.rCode)
+                    //     //     this.wsloaded = true;
+                    //     //     console.log(`Код-R решён: R${this.rCode}`)
+                    //     // }
+                    // } catch (e) {
+                        
+                    // }
+                    this.wsloaded = true;
                 } else {
                     let c = this.toArrayBuffer(event)
 
@@ -118,7 +131,7 @@ module.exports = class PixelBot {
                 }
 
                 if (!this.isStartedWork) {
-                    this.startWork()
+                    this.startWork(store)
                 }
                 this.busy = false;
             } catch (e) {
@@ -129,22 +142,44 @@ module.exports = class PixelBot {
         });
 
         this.ws.on('close', () => {
+            console.log(`[${this.urldata.searchParams.get('vk_user_id')}] disconnected from socket!`)
             this.ws = null;
             this.wsloaded = false;
         })
+
+        setInterval(() => {
+            if ((!this.wsloaded && this.ws === null) || this.ws.readyState === WebSocket.CLOSED) {
+                // Unloaded
+                console.log(`[${this.urldata.searchParams.get('vk_user_id')}] force disconnected from socket!`)
+                this.wsloaded = false;
+                this.ws = null;
+                this.initWs(store); //  auto-reload
+            }
+        }, 60*1000)
     }
 
     async startWork (store) {
-        console.log("Запуск")
-        this.isStartedWork = true;
-        await store.load();
+        console.log(`[${this.urldata.searchParams.get('vk_user_id')}] Начинаю работать!`)
+        this.isStartedWork = true; 
+        
+        let iterations = 0;
         while (true) {
             const keys = Object.keys(store.pixelDataToDraw);
             const ind = keys[Math.floor(Math.random() * keys.length)] // Рандомный элемент
             
             let color = store.pixelDataToDraw[ind]
             let coords = ind.split(",")
+            if (iterations > keys.length || keys.length < 1) {
+                console.log(`[${this.urldata.searchParams.get('vk_user_id')}] отдыхаем чуток...`)
+                await this.sleep(60*2*1000) // hold on, we need to sleep
+                iterations = 0;
+                console.log(`[${this.urldata.searchParams.get('vk_user_id')}] продолжаем работать`)
+                continue;
+            }
+
+            iterations+=1
             if (store.data !== null && color === store.data[ind]) {
+                await this.sleep(1);
                 continue
             }
 
@@ -153,13 +188,8 @@ module.exports = class PixelBot {
                 store.data[ind] = color
             }
 
-            if (keys.length < 1) {
-                break
-            } 
-
             await this.sleep(60000) // 60 sec
         }
-        this.isStartedWork = false;
     }
 
     async send (colorId, flag, x, y, store) {
@@ -172,7 +202,7 @@ module.exports = class PixelBot {
             await this.sleep(500)
         }
         this.ws.send(c)
-        console.log(`Поставил пиксель: x${x} y${y} cid${colorId}`)
+        console.log(`[${this.urldata.searchParams.get('vk_user_id')}] Зарисовываю пиксель: x${x} y${y} | Цвет: ${colorId}`)
     }
 
     pack (colorId, flag, x, y) {

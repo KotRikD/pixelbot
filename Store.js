@@ -30,11 +30,60 @@ const decode_colors = {
     p: 25
 };
 const colors = [
-    [255, 255, 255, 0],
-    [0, 0, 0, 4],
-    [58, 175, 255, 5],
-    [255, 0, 0, 11]
+    [255, 255, 255, 0], // #FFFFFF
+    [194, 194, 194, 1], // #C2C2C2
+    [133, 133, 133, 2], // #858585
+    [71, 71, 71, 3], // #474747
+    [0, 0, 0, 4], // #000000
+    [58, 175, 255, 5], // #3AAFFF
+    [113, 170, 235, 6], // #71AAEB
+    [74, 118, 168, 7], // #4a76a8
+    [7, 75, 243, 8], // #074BF3
+    [94, 48, 235, 9], // #5E30EB
+    [255, 108, 91, 10], // #FF6C5B
+    [254, 37, 0, 11], // #FE2500
+    [255, 33, 139, 12], // #FF218B
+    [153, 36, 79, 13], // #99244F
+    [77, 44, 156, 14], // #4D2C9C
+    [255, 207, 74, 15], // #FFCF4A
+    [254, 180, 63, 16], // #FEB43F
+    [254, 134, 72, 17], // #FE8648
+    [255, 91, 54, 18], // #FF5B36
+    [218, 81, 0, 19], // #DA5100
+    [148, 224, 68, 20], // #94E044
+    [92, 191, 13, 21], // #5CBF0D
+    [195, 209, 23, 22], // #C3D117
+    [252, 199, 0, 23], // #FCC700
+    [211, 131, 1, 24], // #D38301
 ];
+
+let getColorIdByRGB = (x, y, r, g, b) => {
+    if(r === 207 && g === 59 && b === 5) {
+        r = 255;
+        g = 91;
+        b = 54;
+    }
+
+    if(r > 240 && g > 240 && b > 240) {
+        r = 255;
+        g = 255;
+        b = 255;
+    }
+
+    const color = colors.find((item) => {
+        const availableOffset = 10;
+
+        return (item[0]-availableOffset < r && item[0]+availableOffset > r)
+            && (item[1]-availableOffset < g && item[1]+availableOffset > g)
+            && (item[2]-availableOffset < b && item[2]+availableOffset > b);
+    });
+
+    if(!color) {
+        throw new Error(`Incorrect pixel found rgb(${r}, ${g}, ${b}) x${x} y${y}`);
+    }
+
+    return color[3];
+};
 
 let chunkString = function (str, length) {
     return str.match(new RegExp('.{1,' + length + '}', 'g'))
@@ -78,7 +127,23 @@ module.exports = {
     async loadData () {
         this.data = {}
 
-        let startPixels = await axios.get("https://pixel2019.vkforms.ru/api/data/" + randomInteger(1, 19))
+        let startPixels = await axios.get("https://pixel-dev.w84.vkforms.ru/api/data", {
+            headers: {
+                'Host': 'pixel-dev.w84.vkforms.ru',
+                'Connection': 'keep-alive',
+                'Cache-Control': 'max-age=0',
+                'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/85.0.4183.121 Safari/537.36 OPR/71.0.3770.228',
+                'Accept': '*/*',
+                'Origin': 'https://prod-app7148888-4344348240cf.pages-ac.vk-apps.com',
+                'Sec-Fetch-Site': 'cross-site',
+                'Sec-Fetch-Mode': 'cors',
+                'Sec-Fetch-Dest': 'empty',
+                'Referer': `https://prod-app7148888-4344348240cf.pages-ac.vk-apps.com/index.html`,
+                'Accept-Encoding': 'gzip, deflate, br',
+                'Accept-Language': 'ru-RU,ru;q=0.9,en-US;q=0.8,en;q=0.7'
+            }
+        })
+
         let chunkedString = chunkString(startPixels.data, 1590)
         chunkedString = chunkedString.slice(0, chunkedString.length - 1)
         let y = 0;
@@ -113,12 +178,13 @@ module.exports = {
             let color = [imd[i], imd[i + 1], imd[i + 2]]
             if (imd[i + 3] < 1) {
                 continue
-            } else {
-                for (let colord of colors) {
-                    if (color[0] == colord[0] && color[1] == colord[1] && color[2] == colord[2]) {
-                        this.pixelDataToDraw[[x, y]] = colord[3]
-                        break
-                    }
+            } else { 
+                try {
+                    let colorAAA = getColorIdByRGB(x, y, color[0], color[1], color[2])
+                    this.pixelDataToDraw[[x, y]] = colorAAA
+                } catch (e) {
+                    console.log("Обнаружен кривой пиксель. Какая-то часть рисунка может быть не дорисована")
+                    console.error(e);
                 }
             }
         }

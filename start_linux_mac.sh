@@ -1,3 +1,2 @@
 #!/bin/sh
-npm i
-node ./index.js
+npm i && node ./index.js

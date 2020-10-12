@@ -15,10 +15,14 @@ console.log = function (data) {
 };
 
 async function init () {
+    await Store.load();
+    setInterval(() => {
+        Store.load();
+    }, 120*1000)
+
     for (let link of config.wssLinks) {
-        await new Promise((resolve) => setTimeout(resolve, 3000)).then((r) => {
-            new PixelBot(link, Store)
-        });
+        await new Promise((resolve) => setTimeout(resolve, 3500));
+        new PixelBot(link, Store);
     }
 }
 
